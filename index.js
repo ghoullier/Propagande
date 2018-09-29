@@ -107,34 +107,38 @@ class Data {
             });
             const base = new pouchdb_node_1.default(`http://${this.admin.name}:${this.admin.password}@localhost:5984/user_${user.name}`);
             yield base.get('');
-            yield this.addValidation("user_" + user.name, 'validate', validate_onlyAdmin);
-            yield this.addSecurity("user_" + user.name, {
-                admins: {
-                    names: [],
-                    roles: []
-                },
-                readers: {
-                    names: [user.name],
-                    roles: []
-                }
-            });
+            yield Promise.all([
+                this.addValidation("user_" + user.name, 'validate', validate_onlyAdmin),
+                this.addSecurity("user_" + user.name, {
+                    admins: {
+                        names: [],
+                        roles: []
+                    },
+                    readers: {
+                        names: [user.name],
+                        roles: []
+                    }
+                })
+            ]);
         });
     }
     createGroup(name) {
         return __awaiter(this, void 0, void 0, function* () {
             const base = new pouchdb_node_1.default(`http://${this.admin.name}:${this.admin.password}@localhost:5984/group_${name}`);
             yield base.get('');
-            yield this.addValidation("group_" + name, 'validate', validate_onlyAdmin);
-            yield this.addSecurity("group_" + name, {
-                admins: {
-                    names: [],
-                    roles: []
-                },
-                readers: {
-                    names: [],
-                    roles: [name]
-                }
-            });
+            yield Promise.all([
+                this.addValidation("group_" + name, 'validate', validate_onlyAdmin),
+                this.addSecurity("group_" + name, {
+                    admins: {
+                        names: [],
+                        roles: []
+                    },
+                    readers: {
+                        names: [],
+                        roles: [name]
+                    }
+                })
+            ]);
         });
     }
     update(id, doc) {

@@ -108,33 +108,37 @@ class Data {
     })
     const base = new PouchDB(`http://${this.admin.name}:${this.admin.password}@localhost:5984/user_${user.name}`);
     await base.get('');
-    await this.addValidation("user_" + user.name, 'validate', validate_onlyAdmin)
-    await this.addSecurity("user_" + user.name, {
-      admins: {
-        names: [],
-        roles: []
-      },
-      readers: {
-        names: [user.name],
-        roles: []
-      }
-    })
+    await Promise.all([
+      this.addValidation("user_" + user.name, 'validate', validate_onlyAdmin),
+      this.addSecurity("user_" + user.name, {
+        admins: {
+          names: [],
+          roles: []
+        },
+        readers: {
+          names: [user.name],
+          roles: []
+        }
+      })
+    ])
   }
 
   async createGroup(name: string) {
     const base = new PouchDB(`http://${this.admin.name}:${this.admin.password}@localhost:5984/group_${name}`);
     await base.get('');
-    await this.addValidation("group_" + name, 'validate', validate_onlyAdmin)
-    await this.addSecurity("group_" + name, {
-      admins: {
-        names: [],
-        roles: []
-      },
-      readers: {
-        names: [],
-        roles: [name]
-      }
-    })
+    await Promise.all([
+      this.addValidation("group_" + name, 'validate', validate_onlyAdmin),
+      this.addSecurity("group_" + name, {
+        admins: {
+          names: [],
+          roles: []
+        },
+        readers: {
+          names: [],
+          roles: [name]
+        }
+      })
+    ])
   }
 
   async update(id: string, doc: any) {
