@@ -1,0 +1,4 @@
+local/
+*.dump
+node_modules/
+public/pouchdb-7.0.0.min.js
