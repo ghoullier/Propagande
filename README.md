@@ -1,8 +1,6 @@
-# WIP..
+# Propaganda
 
-# Yet another real-time javascript library
-
-## Very light real-time library for both back-end and front-end that provide the essentials,  without lecture you on how structure your code, like framework does.
+## Very light real-time library for both back-end and front-end that provide the essentials.
 
 ### This lib is as scalable as couchDB since it is based on it.
 
@@ -13,7 +11,7 @@
 
 ## Front : 
 ```javascript
-const back = new Backend('http://localhost');
+const back = new Backend('http://myserver.com');
 
 const hello = (str) => {
   console.log('Notification ~>', str);
@@ -25,11 +23,10 @@ back.addFunction(hello);
 ## Back : 
 ```javascript
 
-  const server = new Server('http://localhost');
+  const server = new Server('http://myserver.com');
   await server.init();
   server.front.callFront('hello', 'Wake up everyone !!')
 ```
-
 
 # Call back-end function from front-end : 
 
@@ -41,7 +38,7 @@ back.addFunction(hello);
 
 ## Front : 
 ```javascript
-const back = new Backend('http://localhost');
+const back = new Backend('http://myserver.com');
 back.callNode("ploc", { foo: "eh eh eh" }, (res) => {
     console.log(res);
 })
@@ -49,7 +46,7 @@ back.callNode("ploc", { foo: "eh eh eh" }, (res) => {
 
 ## Back : 
 ```javascript
-const server = new Server('http://localhost');
+const server = new Server('http://myserver.com');
 await server.init();
 
 const ploc = (user, param, callBack) => {
@@ -103,7 +100,7 @@ server.front.callFrontUser('roulio', 'hello', "hey roulio !")
 ```
 ## Front:
 ```javascript
-const back = new Backend('http://localhost');
+const back = new Backend('http://myserver.com');
 await back.login({
     name: 'roulio',
     password: 'chien'
@@ -130,7 +127,7 @@ await server.front.callGroup('hero', 'hello', "hello to all the heroes !")
 
 ## Front: 
 ```javascript
-const back = new Backend('http://localhost');
+const back = new Backend('http://myserver.com');
 await back.login({
     name: 'roulio',
     password: 'chien'
