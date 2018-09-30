@@ -1,0 +1,15 @@
+{
+  "name": "propaganda-server",
+  "version": "1.0.0",
+  "description": "Propaganda Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/pouchdb-node": "^6.1.2",
+    "pouchdb-node": "^7.0.0"
+  }
+}
