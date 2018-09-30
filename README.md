@@ -1,4 +1,4 @@
-# Propaganda
+# Propagande
 
 ## Very light real-time library for both back-end and front-end that provide the essentials.
 
