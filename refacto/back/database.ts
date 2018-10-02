@@ -1,4 +1,5 @@
 import PouchDB from 'pouchdb-node';
+import request from 'request-promise'
 
 const DEFAULT_HOST = 'http://localhost';
 const DEFAULT_PORT = 5984;
@@ -8,14 +9,50 @@ interface user {
   password?: string
 }
 
-class PouchConnection {
+export class PouchConnection {
   couchdb: PouchDB.Database;
   constructor(url: string) {
     this.couchdb = new PouchDB(url);
   }
 
+  /**
+   * Set document
+   * @param doc 
+   */
   async put(doc: object) {
     return await this.couchdb.put(doc);
+  }
+
+  /**
+   * Get document
+   * @param id 
+   */
+  async get(id: string) {
+    return await this.couchdb.get(id)
+  }
+
+  /**
+   * Add security rule
+   * @param doc 
+   */
+  async addSecurity(doc: any) {
+    return await request({
+      url: this.couchdb.name+"/_security",
+      method: 'PUT',
+      body: JSON.stringify(doc),
+    });
+  }
+
+  /**
+   * Add a validation function to couchDB, invoqued by bouchDB engine when add or update a document
+   * @param validationName 
+   * @param func 
+   */
+  async addValidation(name : string ,func: Function) {
+    await this.put({
+      "_id": "_design/" + name,
+      "validate_doc_update": func.toString
+    });
   }
 }
 
