@@ -12,16 +12,45 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const database_1 = __importDefault(require("./database"));
-class Propadande {
-    constructor() {
+const directCall_1 = __importDefault(require("./directCall"));
+const DEFAULT_ADMIN_NAME = 'root';
+const DEFAULT_ADMIN_PASSWORD = 'root';
+const MAIN_NOTIFICATION_TABLE = "notifications";
+class PropadandeServer {
+    constructor(params) {
+        const paramsD = Object.assign({
+            admin: {
+                name: DEFAULT_ADMIN_NAME,
+                password: DEFAULT_ADMIN_PASSWORD
+            }
+        }, params);
         this.databases = {};
+        this.pouchWraper = new database_1.default({
+            admin: paramsD.admin,
+        });
+        this.databases[MAIN_NOTIFICATION_TABLE] = this.pouchWraper.getNewPouchAdminCouchConnection(MAIN_NOTIFICATION_TABLE);
+        this.directCall = new directCall_1.default(this.onDirectConnection.bind(this));
+    }
+    onDirectConnection(socket) {
+        socket.on('message', (call) => {
+            console.log(call);
+        });
+    }
+    /**
+     * Init the Propagande Server
+     */
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // console.log(this.databases);
+        });
     }
     /**
      * Create an user
      * @param user
      */
     createUser(user) {
-        return __awaiter(this, void 0, void 0, function* () { });
+        return __awaiter(this, void 0, void 0, function* () {
+        });
     }
     /**
      * Assign user to a particular group
@@ -76,15 +105,25 @@ class Propadande {
     openFunction(func) {
     }
 }
-exports.default = Propadande;
+exports.default = PropadandeServer;
 const main = () => __awaiter(this, void 0, void 0, function* () {
-    const chien = new database_1.default({
-        admin: {
-            name: 'root',
-            password: 'root'
-        },
-        name: "chien",
+    const chien = new PropadandeServer();
+    yield chien.init();
+    const ploc = (user, param, back) => __awaiter(this, void 0, void 0, function* () {
+        console.log("call from : ", user);
     });
-    chien.getNewPouchConnection({ name: "lapin", password: "chien" }, 'rouste');
+    chien.openFunction(ploc);
+    // await new Promise(resolve => setTimeout(resolve, 10000))
+    // const chien = new Databases({
+    //   admin: {
+    //     name: 'root',
+    //     password: 'root'
+    //   },
+    //   name: "chien",
+    // });
+    // chien.getNewPouchConnection({
+    //   name: "lapin",
+    //   password: "chien"
+    // }, 'rouste')
 });
 main();

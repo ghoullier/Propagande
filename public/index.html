@@ -18,7 +18,7 @@
   <script>
     class Socket {
       constructor() {
-        this.socket = io.connect('http://localhost:3000');
+        this.socket = io.connect('http://localhost:5555');
       }
 
       addMessageCallback(callBack) {
@@ -142,6 +142,7 @@
       }
 
       async onMessage(message) {
+        console.log("MESSAGE");
         if (message.reason === "call") {
           this.funcs[message.name](message.params)
         } else if (message.reason === 'callBack') {
@@ -162,10 +163,10 @@
 
     const main = async () => {
       const back = new Back();
-      const res = await back.login({
-        name: 'frank',
-        password: 'poulet'
-      })
+      // const res = await back.login({
+      //   name: 'frank',
+      //   password: 'poulet'
+      // })
 
       back.addFunction(hello);
       // const r = await back.getPersonalData({name : "frank"})

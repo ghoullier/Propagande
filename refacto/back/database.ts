@@ -4,24 +4,27 @@ const DEFAULT_HOST = 'http://localhost';
 const DEFAULT_PORT = 5984;
 
 interface user {
-  name: String,
-  password?: String
+  name: string
+  password?: string
 }
 
 class PouchConnection {
-  url: String;
-  constructor(url : String) {
-    this.url = url;
+  couchdb: PouchDB.Database;
+  constructor(url: string) {
+    this.couchdb = new PouchDB(url);
+  }
+
+  async put(doc: object) {
+    return await this.couchdb.put(doc);
   }
 }
 
 export default class PouchWrapper {
   port: Number;
   url: String;
-  admin : user;
+  admin: user;
   constructor(params: {
     admin: user,
-    name: String,
     url?: String
     port?: Number,
   }) {
@@ -37,7 +40,22 @@ export default class PouchWrapper {
     this.admin = paramD.admin;
   }
 
-  getNewPouchConnection(user: user, baseName: String) {
+  /**
+   * Get a new PouchConnection instance with admin right
+   * @param user 
+   * @param baseName 
+   */
+  getNewPouchAdminCouchConnection(baseName: string) {
+    const [protocol, url] = this.url.split("//")
+    return new PouchConnection(`${protocol}//${this.admin.name}:${this.admin.password}@${url}:${this.port}/${baseName}`)
+  }
+
+  /**
+   * Get a new PouchConnection instance with specified user right
+   * @param user 
+   * @param baseName 
+   */
+  getNewPouchConnection(user: user, baseName: string) {
     const [protocol, url] = this.url.split("//")
     return new PouchConnection(`${protocol}//${user.name}:${user.password}@${url}:${this.port}/${baseName}`)
   }
