@@ -1,0 +1,21 @@
+{
+  "name": "propagande",
+  "version": "1.0.2",
+  "description": "propagande",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Modez MARTIN",
+  "license": "ISC",
+  "dependencies": {
+    "@types/events": "^1.2.0",
+    "@types/pouchdb-node": "^6.1.2",
+    "@types/request-promise": "^4.1.42",
+    "@types/socket.io": "^1.4.38",
+    "pouchdb-node": "^7.0.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2",
+    "socket.io": "^2.1.1"
+  }
+}

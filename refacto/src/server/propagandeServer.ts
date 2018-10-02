@@ -29,8 +29,7 @@ interface socketCall {
 /**
  * Propagange Server
  */
-export default class PropadandeServer {
-  private databases: any
+export class PropagandeServer {
   private pouchWraper: PouchWrapper;
   private directCall: DirectCall;
   private openedFunctions: any;
@@ -54,7 +53,6 @@ export default class PropadandeServer {
       },
       ...params
     }
-    this.databases = {};
     this.pouchWraper = new PouchWrapper({
       admin: paramsD.admin,
     });
@@ -98,7 +96,14 @@ export default class PropadandeServer {
    */
   async init() {
     // console.log(this.databases);
+  }
 
+  /**
+   * 
+   * @param name Get an user by name
+   */
+  async getUser(name: string) {
+    return await <any>this.usersTable.get('org.couchdb.user:' + name)
   }
 
   /**
@@ -109,9 +114,6 @@ export default class PropadandeServer {
     name: string,
     password: string,
   }) {
-    /**
-     * User creation
-     */
     await this.usersTable.put({
       _id: "org.couchdb.user:" + user.name,
       name: user.name,
@@ -121,9 +123,6 @@ export default class PropadandeServer {
     })
     const userBase = this.pouchWraper.getNewPouchAdminCouchConnection('user_' + user.name)
     await userBase.get('')
-    /**
-     * Right security
-     */
     await Promise.all([
       userBase.addValidation('admin', onlyAdmin),
       userBase.addSecurity({
@@ -140,12 +139,28 @@ export default class PropadandeServer {
   }
 
   /**
+   * Update user properties
+   * @param user 
+   */
+  async updateUser(user : any){
+    const actualUser = await this.usersTable.get("org.couchdb.user:" + user.name)
+    return await this.usersTable.put({
+      ...actualUser, ...user
+    })
+  }
+
+  /**
    * Assign user to a particular group
    * @param userName 
    * @param groupName 
    */
   async assignUserToGroup(userName: string, groupName: string) {
-
+    const user = await this.getUser(userName)
+    if (user.roles.includes(groupName)) {
+      return;
+    }
+    user.roles.push(groupName);
+    await this.updateUser(user)
   }
 
   /**
@@ -153,7 +168,21 @@ export default class PropadandeServer {
    * @param name 
    */
   async createGroup(name: String) {
-
+    const groupeBase = this.pouchWraper.getNewPouchAdminCouchConnection('group_' + name)
+    await groupeBase.get('')
+    await Promise.all([
+      groupeBase.addValidation('admin', onlyAdmin),
+      groupeBase.addSecurity({
+        admins: {
+          names: [],
+          roles: []
+        },
+        readers: {
+          names: [],
+          roles: []
+        }
+      })
+    ])
   }
 
   /**
@@ -177,18 +206,13 @@ export default class PropadandeServer {
    * @param params
    */
   async callFrontUser(userName: String, funcName: String, params: any) {
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnection("user_"+userName)
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnection("user_" + userName)
     await userBase.put({
-      _id : this.genId('cibledCall'),
+      _id: this.genId('cibledCall'),
       reason: 'cibledCall',
       name: funcName,
       params,
     })
-    // const res = await this.data.putIn(genId('cibledCall'), {
-    //   reason: 'cibledCall',
-    //   name: funcName,
-    //   params,
-    // }, "user_" + userName)
   }
 
   /**
@@ -197,8 +221,14 @@ export default class PropadandeServer {
    * @param name 
    * @param params 
    */
-  async callGroup(groupName: String, name: String, params: any) {
-
+  async callGroup(groupName: String, functionName: String, params: any) {
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnection("group_" + groupName)
+    await userBase.put({
+      _id: this.genId('groupCall'),
+      reason: 'groupCall',
+      name: functionName,
+      params,
+    })
   }
 
   /**
@@ -207,32 +237,43 @@ export default class PropadandeServer {
    */
   openFunction(func: Function) {
     if (func.name === "") {
-      throw new Error(`Anonymous function aren't not openable`)
+      throw new Error(`Anonymous function aren't openable`)
     }
     this.openedFunctions[func.name] = func;
   }
 }
 
-const main = async () => {
-  try {
-    const chien = new PropadandeServer();
-    await chien.init();
-    const ploc = async (user: any, param: any, back: Function) => {
-      back("kestuveu")
-      console.log('PLOC');
-    }
-    chien.openFunction(ploc)
-    await chien.callFrontUser('courage', 'hello', 'patibulaire')
-    // await chien.callFront('hello', "courage")
+// const main = async () => {
+//   try {
+//     const chien = new PropadandeServer();
 
-    // await chien.createUser({
-    //   name: 'courage',
-    //   password: "poulet"
-    // })
+//     const ploc = async (user: any, param: any, back: Function) => {
+//       back("kestuveu")
+//       console.log('PLOC');
+//     }
+//     chien.openFunction(ploc)
 
-  } catch (error) {
-    console.log(error);
-  }
-}
+//     // await chien.callFrontUser('courage', 'hello', 'patibulaire')
+//     // await chien.callFront('hello', "courage")
 
-main()
+
+//     // await chien.createUser({
+//     //   name : 'jeanluc',
+//     //   password : 'poulet'
+//     // })
+//     // await chien.createGroup('lesrien')
+//     // await chien.assignUserToGroup("jeanluc", 'lesrien')
+//     // await chien.callGroup('lesrien', 'hello', "vous etes des riens")
+
+//     console.log('ok');
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+// main()
+
+// todo
+// mettre org.machin et tout
+// mettre lowecase partout
+// choisir url socket & couchDB

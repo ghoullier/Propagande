@@ -163,14 +163,12 @@
 
     const main = async () => {
       const back = new Back();
-      const res = await back.login({
-        name: 'courage',
-        password: 'poulet'
-      })
+      // const res = await back.login({
+      //   name: 'jeanluc',
+      //   password: 'poulet'
+      // })
 
       back.addFunction(hello);
-      // const r = await back.getPersonalData({name : "frank"})
-      // console.log(r);
       $("#poke").click((event) => {
         event.preventDefault();
         back.callNode("ploc", { title: "eh eh eh" }, (res) => {
