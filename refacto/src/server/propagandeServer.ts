@@ -1,42 +1,23 @@
-import PouchWrapper, { PouchConnection } from "./database"
+import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
 import { checkServerIdentity } from "tls";
-import DirectCall from "./directCall";
+import { DirectCallServer } from "../common/directCall";
 import { EventEmitter } from "events";
+import * as global from '../common/global'
+import {genId} from '../common/utils'
 import { runInThisContext } from "vm";
 import { onlyAdmin } from "./validations";
-
-const DEFAULT_ADMIN_NAME = 'root';
-const DEFAULT_ADMIN_PASSWORD = 'root';
-
-const MAIN_NOTIFICATION_TABLE = "notifications"
-const USERS_TABLE = '_users'
-
-
-//move this
-interface user {
-  name: string
-  password?: string
-}
-
-interface socketCall {
-  reason: string;
-  name: string,
-  params: any,
-  id: string;
-  user?: user
-}
 
 /**
  * Propagange Server
  */
 export class PropagandeServer {
   private pouchWraper: PouchWrapper;
-  private directCall: DirectCall;
+  private directCall: DirectCallServer;
   private openedFunctions: any;
-  private notificationTable: PouchConnection;
-  private usersTable: PouchConnection;
+  private notificationTable: PouchConnexion;
+  private usersTable: PouchConnexion;
 
-  constructor(params?: {
+  constructor(options?: {
     /**user Admin of couchDB */
     admin?: user,
     /** url of couchDB */
@@ -47,18 +28,18 @@ export class PropagandeServer {
     const paramsD = {
       ...{
         admin: {
-          name: DEFAULT_ADMIN_NAME,
-          password: DEFAULT_ADMIN_PASSWORD
+          name: global.DEFAULT_ADMIN_NAME,
+          password: global.DEFAULT_ADMIN_PASSWORD
         }
       },
-      ...params
+      ...options
     }
     this.pouchWraper = new PouchWrapper({
       admin: paramsD.admin,
     });
-    this.notificationTable = this.pouchWraper.getNewPouchAdminCouchConnection(MAIN_NOTIFICATION_TABLE)
-    this.directCall = new DirectCall(this.onDirectConnection.bind(this));
-    this.usersTable = this.pouchWraper.getNewPouchAdminCouchConnection(USERS_TABLE)
+    this.notificationTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.MAIN_NOTIFICATION_TABLE)
+    this.directCall = new DirectCallServer(this.onDirectConnection.bind(this));
+    this.usersTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.USERS_TABLE)
     this.openedFunctions = {};
   }
 
@@ -66,8 +47,9 @@ export class PropagandeServer {
     socket.on('message', (message: string) => {
       const call: socketCall = JSON.parse(message)
       if (call.reason === 'call') {
+        console.log(call);
         const user = null // AUTH USER HERE AND ALSO GET HIS GROUPS
-        if (this.openedFunctions[call.name]) {
+        if (this.openedFunctions[call.functionName]) {
           const sendBack = (params: any) => {
             socket.emit('message', JSON.stringify({
               name: call.id,
@@ -75,7 +57,7 @@ export class PropagandeServer {
               params
             }))
           }
-          this.openedFunctions[call.name](user, call.params, sendBack)
+          this.openedFunctions[call.functionName](user, call.params, sendBack)
         } else {
           // Non open function called
         }
@@ -83,24 +65,10 @@ export class PropagandeServer {
     })
   }
 
-  /**
-   * Generate an unique ID sortable by date of generation
-   * @param str 
-   */
-  private genId(str: string) {
-    return str + "_" + Date.now() + "_" + Math.random().toString(36).substr(2, 11);
-  };
 
   /**
-   * Init the Propagande Server 
-   */
-  async init() {
-    // console.log(this.databases);
-  }
-
-  /**
-   * 
-   * @param name Get an user by name
+   * Get an user by name
+   * @param name 
    */
   async getUser(name: string) {
     return await <any>this.usersTable.get('org.couchdb.user:' + name)
@@ -121,7 +89,7 @@ export class PropagandeServer {
       type: "user",
       password: user.password,
     })
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnection('user_' + user.name)
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion('user_' + user.name)
     await userBase.get('')
     await Promise.all([
       userBase.addValidation('admin', onlyAdmin),
@@ -142,7 +110,7 @@ export class PropagandeServer {
    * Update user properties
    * @param user 
    */
-  async updateUser(user : any){
+  async updateUser(user: any) {
     const actualUser = await this.usersTable.get("org.couchdb.user:" + user.name)
     return await this.usersTable.put({
       ...actualUser, ...user
@@ -168,7 +136,7 @@ export class PropagandeServer {
    * @param name 
    */
   async createGroup(name: String) {
-    const groupeBase = this.pouchWraper.getNewPouchAdminCouchConnection('group_' + name)
+    const groupeBase = this.pouchWraper.getNewPouchAdminCouchConnexion('group_' + name)
     await groupeBase.get('')
     await Promise.all([
       groupeBase.addValidation('admin', onlyAdmin),
@@ -190,9 +158,9 @@ export class PropagandeServer {
    * @param name 
    * @param params 
    */
-  async callFront(name: String, params: any) {
+  async callClients(name: String, params: any) {
     await this.notificationTable.put({
-      _id: this.genId('mainCall'),
+      _id: genId('mainCall'),
       reason: 'mainCall',
       name,
       params,
@@ -205,10 +173,10 @@ export class PropagandeServer {
    * @param funcName 
    * @param params
    */
-  async callFrontUser(userName: String, funcName: String, params: any) {
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnection("user_" + userName)
+  async callClientUser(userName: String, funcName: String, params: any) {
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion("user_" + userName)
     await userBase.put({
-      _id: this.genId('cibledCall'),
+      _id: genId('cibledCall'),
       reason: 'cibledCall',
       name: funcName,
       params,
@@ -222,9 +190,9 @@ export class PropagandeServer {
    * @param params 
    */
   async callGroup(groupName: String, functionName: String, params: any) {
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnection("group_" + groupName)
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion("group_" + groupName)
     await userBase.put({
-      _id: this.genId('groupCall'),
+      _id: genId('groupCall'),
       reason: 'groupCall',
       name: functionName,
       params,
@@ -245,16 +213,17 @@ export class PropagandeServer {
 
 // const main = async () => {
 //   try {
-//     const chien = new PropadandeServer();
+//     const chien = new PropagandeServer();
 
 //     const ploc = async (user: any, param: any, back: Function) => {
-//       back("kestuveu")
 //       console.log('PLOC');
+//       back("kestuveu")
 //     }
+
 //     chien.openFunction(ploc)
 
-//     // await chien.callFrontUser('courage', 'hello', 'patibulaire')
-//     // await chien.callFront('hello', "courage")
+//     // await chien.callClientUser('courage', 'hello', 'patibulaire')
+//     // await chien.callClients('hello', "courage")
 
 
 //     // await chien.createUser({
@@ -263,7 +232,7 @@ export class PropagandeServer {
 //     // })
 //     // await chien.createGroup('lesrien')
 //     // await chien.assignUserToGroup("jeanluc", 'lesrien')
-//     // await chien.callGroup('lesrien', 'hello', "vous etes des riens")
+//     await chien.callGroup('lesrien', 'hello', "vous etes des riens")
 
 //     console.log('ok');
 //   } catch (error) {
@@ -273,7 +242,10 @@ export class PropagandeServer {
 
 // main()
 
-// todo
-// mettre org.machin et tout
-// mettre lowecase partout
-// choisir url socket & couchDB
+// // todo
+// // mettre appName 
+// // mettre lowecase partout
+// // choisir url socket & couchDB
+// // eviter trimballer password pendant directCalls
+// // faire conf couchDB
+// // update roles realTimes

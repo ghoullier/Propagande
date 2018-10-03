@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Lite</title>
+  <script src="./pouchdb-7.0.0.min.js"></script>
+
+</head>
+
+<body>
+  <h1>Modez est grand</h1>
+  <p><input type="button" value="send" id="poke" /></p>
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+  <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+  <script>
+    class Socket {
+      constructor() {
+        this.socket = io.connect('http://localhost:5555');
+      }
+
+      addMessageCallback(callBack) {
+        this.socket.on('message', (message) => {
+          callBack(JSON.parse(message));
+        })
+      }
+
+      emit(message) {
+        this.socket.emit('message', JSON.stringify(message));
+      }
+    }
+
+    class DataBase {
+      constructor() {
+        this.remoteDB = new PouchDB('http://localhost:5984/notifications');
+        this.remoteDB.changes({
+          live: true,
+          retry: true,
+          since: "now",
+          include_docs: true
+        }).on('change', this.onChange.bind(this))
+        this.funcs = {};
+        this.remoteDBUser = null;
+      }
+
+      // async setPersonalData(user, data) {
+      //   const doc = await this.remoteDBUser.get("org.couchdb.user:" + user.name)
+      //   doc.data = { ...doc.data, ...data }
+      //   return await this.remoteDBUser.put(doc)
+      // }
+
+      async login(user) {
+        this.remoteDBUser = new PouchDB(`http://${user.name}:${user.password}@localhost:5984/_users/`);
+        this.cibledNotifDb = new PouchDB(`http://${user.name}:${user.password}@localhost:5984/user_${user.name}`);
+        this.cibledNotifDb.changes({
+          live: true,
+          retry: true,
+          since: "now",
+          include_docs: true
+        }).on('change', this.onChange.bind(this))
+        const pers = await this.getPersonalData(user);
+        for (let role of pers.roles) {
+          const listener = new PouchDB(`http://${user.name}:${user.password}@localhost:5984/group_${role}`)
+          listener.changes({
+            live: true,
+            retry: true,
+            since: "now",
+            include_docs: true
+          }).on('change', this.onChange.bind(this))
+        }
+      }
+
+      async getPersonalData(user) {
+        return (await this.remoteDBUser.get("org.couchdb.user:" + user.name))
+      }
+
+      onChange(change) {
+        let doc = change.doc
+        if (doc.reason === "mainCall" || doc.reason === 'cibledCall' || doc.reason === 'groupCall') {
+          if (this.funcs[doc.name]) {
+            try {
+              this.funcs[doc.name](doc.params);
+            } catch (error) {
+              console.log(error);
+            }
+          }
+        }
+      }
+
+      addFunction(func) {
+        this.funcs[func.name] = func;
+      }
+    }
+
+    const genId = function () {
+      return '_' + Math.random().toString(36).substr(2, 11);
+    };
+
+    /**
+     * 
+     * */
+    class Back {
+      constructor(socket, database) {
+        this.database = new DataBase();
+        this.socket = new Socket();
+        this.socket.addMessageCallback(this.onMessage.bind(this));
+        this.backFuncs = {};
+        this.user = null;
+      }
+
+      async getPersonalData() {
+        return await this.database.getPersonalData(this.user)
+      }
+
+      // async setPersonalData(data) {
+      //   await this.database.setPersonalData(this.user, data)
+      // }
+
+      async login(user) {
+        this.user = user;
+        await this.database.login(this.user);
+
+
+      }
+
+      callNode(name, params, callback = (result) => null) {
+        const id = genId();
+        this.socket.emit({
+          reason: 'call',
+          name,
+          params,
+          id,
+          user: this.user
+        })
+        this.backFuncs[id] = callback;
+      }
+
+      addFunction(func) {
+        this.database.addFunction(func)
+      }
+
+      async onMessage(message) {
+        console.log("MESSAGE");
+        if (message.reason === "call") {
+          this.funcs[message.name](message.params)
+        } else if (message.reason === 'callBack') {
+          this.backFuncs[message.name](message.params);
+          // delete (this.backFuncs[message.name])
+        }
+      }
+    }
+
+    /**
+     * 
+     * 
+     * 
+     * */
+    const hello = (params) => {
+      console.log('Notification ~>', params);
+    }
+
+    const main = async () => {
+      const back = new Back();
+      // const res = await back.login({
+      //   name: 'jeanluc',
+      //   password: 'poulet'
+      // })
+
+      back.addFunction(hello);
+      $("#poke").click((event) => {
+        event.preventDefault();
+        back.callNode("ploc", { title: "eh eh eh" }, (res) => {
+          console.log("RES ", res);
+        })
+      })
+    }
+    main();
+
+
+
+  </script>
+</body>
+
+</html>
