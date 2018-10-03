@@ -10,7 +10,7 @@ module.exports = {
     },
     output: {
         publicPath: "/js/",
-        path: path.join(__dirname, '/wwwroot/js/'),
+        path: path.join(__dirname, '/browser/'),
         filename: '[name].build.js',
         library : 'PropagandeClient'
     },
