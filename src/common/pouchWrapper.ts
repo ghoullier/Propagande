@@ -1,6 +1,5 @@
-import PouchDB from 'pouchdb'
-import request from 'request-promise'
 import * as global from './global'
+import { PouchConnexionServer } from '../server/pouchWrapperServer';
 
 /**
  * PouchConnexion Object, each client User should have many connexion 
@@ -10,8 +9,8 @@ import * as global from './global'
  */
 export class PouchConnexion {
   couchdb: PouchDB.Database;
-  constructor(url: string) {
-    this.couchdb = new PouchDB(url);
+  constructor(getNewCouchDb: Function, url: string) {
+    this.couchdb = getNewCouchDb(url);
   }
 
   /**
@@ -28,18 +27,6 @@ export class PouchConnexion {
    */
   async get(id: string) {
     return <any>await this.couchdb.get(id)
-  }
-
-  /**
-   * Add security rule
-   * @param doc 
-   */
-  async addSecurity(doc: any) {
-    return await request({
-      url: this.couchdb.name + "/_security",
-      method: 'PUT',
-      body: JSON.stringify(doc),
-    });
   }
 
   /**
@@ -76,7 +63,8 @@ export default class PouchWrapper {
   port: Number;
   url: String;
   admin: user;
-  constructor(params: {
+  getNewCouchDb: Function;
+  constructor(getNewCouchDb: Function, params: {
     admin?: user,
     url?: String
     port?: Number,
@@ -92,6 +80,7 @@ export default class PouchWrapper {
     this.port = paramD.port;
     this.url = paramD.url;
     this.admin = paramD.admin;
+    this.getNewCouchDb = getNewCouchDb;
   }
 
   /**
@@ -101,7 +90,7 @@ export default class PouchWrapper {
    */
   getNewPouchAdminCouchConnexion(baseName: string) {
     const [protocol, url] = this.url.split("//")
-    return new PouchConnexion(`${protocol}//${this.admin.name}:${this.admin.password}@${url}:${this.port}/${baseName}`)
+    return <PouchConnexionServer>new PouchConnexion(this.getNewCouchDb, `${protocol}//${this.admin.name}:${this.admin.password}@${url}:${this.port}/${baseName}`)
   }
 
   /**
@@ -111,7 +100,7 @@ export default class PouchWrapper {
    */
   getNewPouchConnexion(user: user, baseName: string) {
     const [protocol, url] = this.url.split("//")
-    return new PouchConnexion(`${protocol}//${user.name}:${user.password}@${url}:${this.port}/${baseName}`)
+    return new PouchConnexion(this.getNewCouchDb, `${protocol}//${user.name}:${user.password}@${url}:${this.port}/${baseName}`)
   }
 
   /**
@@ -120,7 +109,7 @@ export default class PouchWrapper {
  * @param baseName 
  */
   getNewAnonymousPouchConnexion(baseName: string) {
-    return new PouchConnexion(`${this.url}:${this.port}/${baseName}`)
+    return new PouchConnexion(this.getNewCouchDb, `${this.url}:${this.port}/${baseName}`)
   }
 
 }

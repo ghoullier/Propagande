@@ -1,6 +1,6 @@
 {
   "name": "propagande",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "propagande",
   "main": "lib/index.js",
   "scripts": {
@@ -12,19 +12,21 @@
   "dependencies": {
     "@types/events": "^1.2.0",
     "@types/pouchdb": "^6.3.2",
+    "@types/pouchdb-browser": "^6.1.2",
     "@types/request-promise": "^4.1.42",
     "@types/socket.io": "^1.4.38",
     "@types/socket.io-client": "^1.4.32",
     "pouchdb": "^7.0.0",
+    "pouchdb-browser": "^7.0.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1"
   },
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-loader": "^8.0.4",
-    "babel-preset-env": "^1.7.0",
-    "webpack": "^4.20.2"
+    "ts-loader": "^5.2.1",
+    "typescript": "^3.1.1",
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.1.2"
   }
 }

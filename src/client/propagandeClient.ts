@@ -1,6 +1,7 @@
+import PouchDB from 'pouchdb-browser'
 import * as global from '../common/global'
 import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
-import { DirectCallClient } from '../common/directCall'
+import { DirectCallClient } from './directCall'
 import { genId } from '../common/utils'
 
 export class PropagandeClient {
@@ -34,12 +35,13 @@ export class PropagandeClient {
     this.directCall = new DirectCallClient();
     this.serverCallbacks = {};
     this.openedFunctions = {};
-    this.pouchWraper = new PouchWrapper({});
+    this.pouchWraper = new PouchWrapper(this.getNewPouchDb,{});//TODO
     this.notificationTable = this.pouchWraper.getNewAnonymousPouchConnexion(global.MAIN_NOTIFICATION_TABLE)
     this.notificationTable.watchChange((event: any) => {
       this.onCouchEvent(event.doc)
     })
   }
+
 
   /**
    * Called when couchDB change
@@ -57,6 +59,14 @@ export class PropagandeClient {
       }
     }
   }
+
+  /**
+   * Return couchDb client
+   */
+  private getNewPouchDb(url:string) {
+    return new PouchDB(url)
+  }
+
 
   /**
    * Login as a registred user

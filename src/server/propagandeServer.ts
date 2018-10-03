@@ -1,12 +1,13 @@
+import PouchDB from 'pouchdb';
 import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
 import { checkServerIdentity } from "tls";
-import { DirectCallServer } from "../common/directCall";
+import { DirectCallServer } from "./directCall";
 import { EventEmitter } from "events";
 import * as global from '../common/global'
-import {genId} from '../common/utils'
+import { genId } from '../common/utils'
 import { runInThisContext } from "vm";
 import { onlyAdmin } from "./validations";
-
+import { PouchConnexionServer } from './pouchWrapperServer'
 /**
  * Propagange Server
  */
@@ -14,8 +15,8 @@ export class PropagandeServer {
   private pouchWraper: PouchWrapper;
   private directCall: DirectCallServer;
   private openedFunctions: any;
-  private notificationTable: PouchConnexion;
-  private usersTable: PouchConnexion;
+  private notificationTable: PouchConnexionServer;
+  private usersTable: PouchConnexionServer;
 
   constructor(options?: {
     /**user Admin of couchDB */
@@ -34,7 +35,7 @@ export class PropagandeServer {
       },
       ...options
     }
-    this.pouchWraper = new PouchWrapper({
+    this.pouchWraper = new PouchWrapper(this.getNewPouchDb, {
       admin: paramsD.admin,
     });
     this.notificationTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.MAIN_NOTIFICATION_TABLE)
@@ -42,6 +43,14 @@ export class PropagandeServer {
     this.usersTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.USERS_TABLE)
     this.openedFunctions = {};
   }
+
+  /**
+   * Return couchDb server
+   */
+  private getNewPouchDb(url: string) {
+    return new PouchDB(url)
+  }
+
 
   private onDirectConnection(socket: SocketIO.Socket) {
     socket.on('message', (message: string) => {
