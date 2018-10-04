@@ -23,32 +23,7 @@ propagande.openFunction(hello)
 propagande.callClients('hello', "Hello everyone !")
 ```
 
-# Calling Server function from Client: 
 
- - You can also register a function in your server that will be callable from client, well this is not better than a lame HTTP call, or is it ?
-
- The big advantage compared to a HTTP call, is that when the client call the function, it can provide an optional callback, and the server who receveid the call, can trigger the callback as many time as desired.
-
-  - In this example, the console of the client will display "yes", then 3 secondes lather, "WAIT NO !!"
-
-## Client (Browser):
-```javascript
-propagande.callServer("ploc", null, (result) => {
-    console.log(result);
-})
-```
-
-## Server(Node):
-```javascript
-function ploc(user, param, callBack){
-    console.log(user.name+" called"); //in our case, user is null 
-    callBack("yes")
-    setTimeout(() => {
-        callBack("WAIT NO !!")
-    }, 3000)
-}
-propagande.openFunction(ploc)
-```
 
 # Create an User : 
 
@@ -104,6 +79,32 @@ function hello(message){
     console.log(message);
 }
 propagande.openFunction(hello)
+```
+# Calling Server function from Client: 
+
+ - You can also register a function in your server that will be callable from client, well this is not better than a lame HTTP call, or is it ?
+
+ The big advantage compared to a HTTP call, is that when the client call the function, it can provide an optional callback, and the server who receveid the call, can trigger the callback as many time as desired.
+
+  - In this example, the console of the client will display "yes", then 3 secondes lather, "WAIT NO !!"
+
+## Client (Browser):
+```javascript
+propagande.callServer("ploc", null, (result) => {
+    console.log(result);
+})
+```
+
+## Server(Node):
+```javascript
+function ploc(user, param, callBack){
+    console.log(user.name+" called"); //in our case, user is null 
+    callBack("yes")
+    setTimeout(() => {
+        callBack("WAIT NO !!")
+    }, 3000)
+}
+propagande.openFunction(ploc)
 ```
 
 # Setup Propagande
