@@ -183,6 +183,7 @@ const propagande = new PropagandeServer({
 })
 // Ready !
 ```
+## Client (Browser):
 ```javascript
 const propagande = new PropagandeClient({
     appName : "myApp",
