@@ -155,6 +155,8 @@ const propagande = new PropagandeServer({
 ```
 
 ## Use Propagande Client in your browser
+ - get the minimified version of propagande client here : 
+    https://github.com/dezmou/Propagande/blob/master/browser/propagande-min.js
 
 ```html
 <script src="propagande-min.js"></script>
