@@ -14,42 +14,49 @@ export class PropagandeServer {
   private openedFunctions: any;
   private notificationTable: PouchConnexionServer;
   private usersTable: PouchConnexionServer;
-
-  constructor(options?: {
+  public appName: string;
+  constructor(options: {
+    /**Name of you App */
+    appName: string,
     /**user Admin of couchDB */
-    admin?: user,
-    /** url of couchDB */
+    admin: userLogin,
+    /** url of couchDB, default to localhost */
     couchUrl?: string,
-    /** Port of couchDB */
+    /** Port of couchDB, default to 5984*/
     couchPort?: number,
+    /**Port of your Propagande Socket, default to 5555*/
+    propagandePort? : number
   }) {
-    const paramsD = {
+    const paramsD: any = {
       ...{
-        admin: {
-          name: global.DEFAULT_ADMIN_NAME,
-          password: global.DEFAULT_ADMIN_PASSWORD
-        }
+        couchUrl: global.DEFAULT_COUCHDB_HOST,
+        couchPort: global.DEFAULT_COUCHDB_PORT,
+        propagandePort : global.DEFAULT_PROPAGANDE_PORT
       },
       ...options
     }
     this.pouchWraper = new PouchWrapper(this.getNewPouchDb, {
       admin: paramsD.admin,
     });
-    this.notificationTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.MAIN_NOTIFICATION_TABLE)
-    this.directCall = new DirectCallServer(this.onDirectConnection.bind(this));
+    this.appName = paramsD.appName;
+    this.notificationTable = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_${global.MAIN_NOTIFICATION_TABLE}`)
+    this.directCall = new DirectCallServer(this.onDirectConnexion.bind(this));
     this.usersTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.USERS_TABLE)
     this.openedFunctions = {};
   }
 
   /**
-   * Return couchDb server
+   * Return couchDb server connexion
    */
   private getNewPouchDb(url: string) {
     return new PouchDB(url)
   }
 
-
-  private onDirectConnection(socket: SocketIO.Socket) {
+  /**
+   * Socket connexion handler
+   * @param socket 
+   */
+  private onDirectConnexion(socket: SocketIO.Socket) {
     socket.on('message', (message: string) => {
       const call: socketCall = JSON.parse(message)
       if (call.reason === 'call') {
@@ -77,7 +84,8 @@ export class PropagandeServer {
    * @param name 
    */
   async getUser(name: string) {
-    return await <any>this.usersTable.get('org.couchdb.user:' + name)
+    // return await <any>this.usersTable.get('org.couchdb.user:' + name)
+    return await <any>this.usersTable.get(`org.couchdb.user:propagande_${this.appName}_${name}`)
   }
 
   /**
@@ -89,13 +97,13 @@ export class PropagandeServer {
     password: string,
   }) {
     await this.usersTable.put({
-      _id: "org.couchdb.user:" + user.name,
+      _id: `org.couchdb.user:propagande_${this.appName}_${name}`,
       name: user.name,
       roles: [],
       type: "user",
       password: user.password,
     })
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion('user_' + user.name)
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_user_${user.name}`)
     await userBase.get('')
     await Promise.all([
       userBase.addValidation('admin', onlyAdmin),
@@ -117,7 +125,7 @@ export class PropagandeServer {
    * @param user 
    */
   async updateUser(user: any) {
-    const actualUser = await this.usersTable.get("org.couchdb.user:" + user.name)
+    const actualUser = await this.usersTable.get(`org.couchdb.user:propagande_${this.appName}_${name}`)
     return await this.usersTable.put({
       ...actualUser, ...user
     })
@@ -142,7 +150,8 @@ export class PropagandeServer {
    * @param name 
    */
   async createGroup(name: String) {
-    const groupeBase = this.pouchWraper.getNewPouchAdminCouchConnexion('group_' + name)
+    const groupeBase = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_group_${name}`)
+    
     await groupeBase.get('')
     await Promise.all([
       groupeBase.addValidation('admin', onlyAdmin),
@@ -180,7 +189,7 @@ export class PropagandeServer {
    * @param params
    */
   async callClientUser(userName: String, funcName: String, params: any) {
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion("user_" + userName)
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_user_${userName}`)
     await userBase.put({
       _id: genId('cibledCall'),
       reason: 'cibledCall',
@@ -196,7 +205,7 @@ export class PropagandeServer {
    * @param params 
    */
   async callGroup(groupName: String, functionName: String, params: any) {
-    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion("group_" + groupName)
+    const userBase = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_group_${groupName}`)
     await userBase.put({
       _id: genId('groupCall'),
       reason: 'groupCall',
@@ -219,7 +228,13 @@ export class PropagandeServer {
 
 // const main = async () => {
 //   try {
-//     const chien = new PropagandeServer();
+//     const chien = new PropagandeServer({
+//       appName: "chien",
+//       admin: {
+//         name: 'root',
+//         password: 'root'
+//       }
+//     })
 
 //     const ploc = async (user: any, param: any, back: Function) => {
 //       console.log('PLOC');
@@ -229,7 +244,7 @@ export class PropagandeServer {
 //     chien.openFunction(ploc)
 
 //     // await chien.callClientUser('courage', 'hello', 'patibulaire')
-//     // await chien.callClients('hello', "courage")
+//     await chien.callClients('hello', "courage")
 
 
 //     // await chien.createUser({
@@ -255,3 +270,4 @@ export class PropagandeServer {
 // // eviter trimballer password pendant directCalls
 // // faire conf couchDB
 // // update roles realTimes
+// // @types/propagande

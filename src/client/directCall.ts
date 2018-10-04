@@ -1,3 +1,4 @@
+import * as global from '../common/global'
 import socketClient from "socket.io-client"
 
 /**
@@ -6,8 +7,11 @@ import socketClient from "socket.io-client"
 export class DirectCallClient {
   io: any;
   http: any;
-  constructor() {
-    this.io = socketClient('http://localhost:5555').connect()
+  constructor(options : {
+    url : string,
+    port : number
+  }) {
+    this.io = socketClient(`${options.url}:${options.port}`).connect()
   }
 
   /**
