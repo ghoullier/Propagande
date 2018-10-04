@@ -1,6 +1,6 @@
 # Propagande
 
-## Next generation real-time library
+## Very light real-time library that do the essentials
 
 ### Propagande break the codes of communication client/server by allowing you to :
 

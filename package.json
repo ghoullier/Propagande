@@ -1,6 +1,6 @@
 {
   "name": "propagande",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "propagande",
   "main": "lib/index.js",
   "scripts": {
