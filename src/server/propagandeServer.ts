@@ -1,11 +1,8 @@
 import PouchDB from 'pouchdb';
 import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
-import { checkServerIdentity } from "tls";
 import { DirectCallServer } from "./directCall";
-import { EventEmitter } from "events";
 import * as global from '../common/global'
 import { genId } from '../common/utils'
-import { runInThisContext } from "vm";
 import { onlyAdmin } from "./validations";
 import { PouchConnexionServer } from './pouchWrapperServer'
 /**

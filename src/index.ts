@@ -1,2 +1,1 @@
-// export { PropagandeServer } from './server/propagandeServer';
-export { PropagandeClient } from './client/propagandeClient';
+export { PropagandeServer } from './server/propagandeServer';
