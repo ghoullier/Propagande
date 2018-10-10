@@ -1,6 +1,6 @@
 # Propagande
 
-## Very light real-time library that do the essentials
+## Yet another real-time javascript library
 
 ### Propagande break the codes of communication client/server by allowing you to :
 
@@ -69,7 +69,7 @@ propagande.openFunction(hello)
 await propagande.createGroup('hero');
 await propagande.assignUserToGroup('roulio', 'hero');
 await propagande.assignUserToGroup('franck', 'hero');
-await propagande.front.callGroup('hero', 'hello', "hello to all the heroes !")
+await propagande.callGroup('hero', 'hello', "hello to all the heroes !")
 ```
 Still the same for the client
 ## Client (Browser): 
@@ -195,4 +195,4 @@ const propagande = new PropagandeClient({
     couchPort: 4567, // only if couchDB is not installed with default port (5984)
 })
 // Ready !
-```
+``` 
