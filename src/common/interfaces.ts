@@ -1,11 +1,11 @@
-interface userLogin {
+export interface userLogin {
   /**user name */
   name: string
   /**user password */
   password: string
 }
 
-interface user {
+export interface user {
   /**user name */
   name: string
   /**user password */
@@ -14,7 +14,7 @@ interface user {
   roles? : any[]
 }
 
-interface socketCall {
+export interface socketCall {
   reason: string;
   functionName: string,
   params: any,

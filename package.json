@@ -1,6 +1,6 @@
 {
   "name": "propagande",
-  "version": "1.0.23",
+  "version": "1.0.26",
   "description": "propagande",
   "main": "lib/index.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "@types/socket.io": "^1.4.38",
     "@types/socket.io-client": "^1.4.32",
     "pouchdb": "^7.0.0",
+    "pouchdb-find": "^7.0.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "socket.io": "^2.1.1",

@@ -1,19 +1,25 @@
 import PouchDB from 'pouchdb';
+import PouchdbFind from 'pouchdb-find';
 import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
 import { DirectCallServer } from "./directCall";
 import * as global from '../common/global'
 import { genId } from '../common/utils'
 import { onlyAdmin } from "./validations";
 import { PouchConnexionServer } from './pouchWrapperServer'
+import { userLogin, socketCall } from '../common/interfaces';
+
+PouchDB.plugin(PouchdbFind)
+
 /**
  * Propagange Server
  */
 export class PropagandeServer {
   private pouchWraper: PouchWrapper;
-  private directCall: DirectCallServer;
+  private directCall?: DirectCallServer;
   private openedFunctions: any;
   private notificationTable: PouchConnexionServer;
   private usersTable: PouchConnexionServer;
+  private publicData: PouchConnexionServer;
   public appName: string;
   constructor(options: {
     /**Name of you App */
@@ -25,13 +31,16 @@ export class PropagandeServer {
     /** Port of couchDB, default to 5984*/
     couchPort?: number,
     /**Port of your Propagande Socket, default to 5555*/
-    propagandePort? : number
+    propagandePort?: number,
+    /**Disable socket server if you don't want to listen client calls*/
+    noSocket?: boolean
   }) {
     const paramsD: any = {
       ...{
         couchUrl: global.DEFAULT_COUCHDB_HOST,
         couchPort: global.DEFAULT_COUCHDB_PORT,
-        propagandePort : global.DEFAULT_PROPAGANDE_PORT
+        propagandePort: global.DEFAULT_PROPAGANDE_PORT,
+        noSocket: false
       },
       ...options
     }
@@ -40,9 +49,19 @@ export class PropagandeServer {
     });
     this.appName = paramsD.appName;
     this.notificationTable = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_${global.MAIN_NOTIFICATION_TABLE}`)
-    this.directCall = new DirectCallServer(this.onDirectConnexion.bind(this));
+    if (!paramsD.noSocket) {
+      this.directCall = new DirectCallServer(this.onDirectConnexion.bind(this));
+    }
     this.usersTable = this.pouchWraper.getNewPouchAdminCouchConnexion(global.USERS_TABLE)
+    this.publicData = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_${global.MAIN_PUBLIC_DATA_TABLE}`)
     this.openedFunctions = {};
+  }
+
+  /**
+   * Init the Propagande App if it is first time launched
+   */
+  async init(){
+    // todo make table security
   }
 
   /**
@@ -151,7 +170,7 @@ export class PropagandeServer {
    */
   async createGroup(name: String) {
     const groupeBase = this.pouchWraper.getNewPouchAdminCouchConnexion(`propagande_${this.appName}_group_${name}`)
-    
+
     await groupeBase.get('')
     await Promise.all([
       groupeBase.addValidation('admin', onlyAdmin),
@@ -166,6 +185,27 @@ export class PropagandeServer {
         }
       })
     ])
+  }
+
+  async listPublicDocuments(){
+    return await this.publicData.list()
+  }
+
+  /**
+   * Save a document and make it read-acces to everyone
+   * @param doc 
+   */
+  async putPublicDocument(id: string, doc: any) {
+    try {
+      const { _rev } = await this.publicData.get(id)
+      doc._rev = _rev
+    } catch (error) {
+      // new document
+    }
+    await this.publicData.put({
+      "_id": id,
+      ...doc,
+    })
   }
 
   /**
@@ -226,36 +266,40 @@ export class PropagandeServer {
   }
 }
 
+
 // const main = async () => {
 //   try {
 //     const chien = new PropagandeServer({
-//       appName: "chien",
+//       appName: "place",
+//       noSocket: true,
 //       admin: {
 //         name: 'root',
 //         password: 'root'
 //       }
 //     })
+//     // await chien.putPublicDocument("magreb", { magreb: "le ROUGEATRE" })
+//     const res = await chien.listPublicDocuments();
+//     console.log(res);
+//     // const ploc = async (user: any, param: any, back: Function) => {
+//     //   console.log('PLOC');
+//     //   back("kestuveu")
+//     // }
 
-//     const ploc = async (user: any, param: any, back: Function) => {
-//       console.log('PLOC');
-//       back("kestuveu")
-//     }
+//     // chien.openFunction(ploc)
 
-//     chien.openFunction(ploc)
-
-//     // await chien.callClientUser('courage', 'hello', 'patibulaire')
-//     await chien.callClients('hello', "courage")
+//     // // await chien.callClientUser('courage', 'hello', 'patibulaire')
+//     // await chien.callClients('hello', "courage")
 
 
-//     // await chien.createUser({
-//     //   name : 'jeanluc',
-//     //   password : 'poulet'
-//     // })
-//     // await chien.createGroup('lesrien')
-//     // await chien.assignUserToGroup("jeanluc", 'lesrien')
-//     await chien.callGroup('lesrien', 'hello', "vous etes des riens")
+//     // // await chien.createUser({
+//     // //   name : 'jeanluc',
+//     // //   password : 'poulet'
+//     // // })
+//     // // await chien.createGroup('lesrien')
+//     // // await chien.assignUserToGroup("jeanluc", 'lesrien')
+//     // await chien.callGroup('lesrien', 'hello', "vous etes des riens")
 
-//     console.log('ok');
+//     // console.log('ok');
 //   } catch (error) {
 //     console.log(error);
 //   }
@@ -271,3 +315,5 @@ export class PropagandeServer {
 // // faire conf couchDB
 // // update roles realTimes
 // // @types/propagande
+
+// privatiser public et notiftable

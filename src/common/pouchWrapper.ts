@@ -1,5 +1,6 @@
 import * as global from './global'
 import { PouchConnexionServer } from '../server/pouchWrapperServer';
+import { user } from './interfaces';
 
 /**
  * PouchConnexion Object, each client User should have many connexion 
@@ -11,6 +12,16 @@ export class PouchConnexion {
   couchdb: PouchDB.Database;
   constructor(getNewCouchDb: Function, url: string) {
     this.couchdb = getNewCouchDb(url);
+  }
+
+  /**
+   * list indexs
+   */
+  async list(){
+    return await this.couchdb.allDocs({
+      include_docs : true
+    })
+    // return await this.couchdb.getIndexes();
   }
 
   /**

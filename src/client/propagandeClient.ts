@@ -1,8 +1,13 @@
 import PouchDB from 'pouchdb-browser'
+import PouchdbFind from 'pouchdb-find';
 import * as global from '../common/global'
 import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
 import { DirectCallClient } from './directCall'
 import { genId } from '../common/utils'
+import { user } from '../common/interfaces';
+
+PouchDB.plugin(PouchdbFind)
+
 /**
  * Propagande Client for browser
  */
@@ -15,6 +20,7 @@ export class PropagandeClient {
   private notificationTable: PouchConnexion;
   private userTable?: PouchConnexion;
   private userNotifTable?: PouchConnexion;
+  private publicTable : PouchConnexion;
   public appName: string;
   constructor(options?: {
     /**Your app name defined by your PropagandeServer */
@@ -49,11 +55,18 @@ export class PropagandeClient {
       port: paramsD.couchPort
     });
     this.notificationTable = this.pouchWraper.getNewAnonymousPouchConnexion(`propagande_${this.appName}_${global.MAIN_NOTIFICATION_TABLE}`)
+    this.publicTable = this.pouchWraper.getNewAnonymousPouchConnexion(`propagande_${this.appName}_${global.MAIN_PUBLIC_DATA_TABLE}`)
     this.notificationTable.watchChange((event: any) => {
       this.onCouchEvent(event.doc)
     })
   }
 
+  /**
+   * List all public Documents
+   */
+  async listPublicDocuments(){
+    return await this.publicTable.list();
+  }
 
   /**
    * Called when couchDB change
