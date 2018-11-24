@@ -1,6 +1,6 @@
 {
   "name": "propagande",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "propagande",
   "main": "lib/index.js",
   "scripts": {
@@ -10,21 +10,23 @@
   "author": "Modez MARTIN",
   "license": "ISC",
   "dependencies": {
-    "@types/events": "^1.2.0",
+    "@types/cors": "^2.8.4",
+    "@types/express": "^4.16.0",
+    "@types/node": "^10.12.0",
     "@types/pouchdb": "^6.3.2",
-    "@types/pouchdb-browser": "^6.1.2",
+    "@types/pouchdb-node": "^6.1.2",
     "@types/request-promise": "^4.1.42",
-    "@types/socket.io": "^1.4.38",
-    "@types/socket.io-client": "^1.4.32",
+    "cors": "^2.8.5",
+    "express": "*",
+    "express-pouchdb": "*",
     "pouchdb": "^7.0.0",
-    "pouchdb-find": "^7.0.0",
-    "request": "^2.88.0",
-    "request-promise": "^4.2.2",
-    "socket.io": "^2.1.1",
-    "socket.io-client": "^2.1.1"
+    "pouchdb-authentication": "^1.1.3",
+    "pouchdb-node": "^7.0.0",
+    "request-promise": "^4.2.2"
   },
   "devDependencies": {
-    "pouchdb-browser": "^7.0.0",
+    "@types/axios": "^0.14.0",
+    "axios": "^0.18.0",
     "ts-loader": "^5.2.1",
     "typescript": "^3.1.1",
     "webpack": "^4.20.2",

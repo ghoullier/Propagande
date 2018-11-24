@@ -1,143 +1,138 @@
-import PouchDB from 'pouchdb-browser'
-import PouchdbFind from 'pouchdb-find';
+import PouchDB from "pouchdb"
+import PouchDBAuth from "pouchdb-authentication"
+import axios from "axios"
+import { Databases, user } from "../common/interfaces";
 import * as global from '../common/global'
-import PouchWrapper, { PouchConnexion } from "../common/pouchWrapper"
-import { DirectCallClient } from './directCall'
-import { genId } from '../common/utils'
-import { user } from '../common/interfaces';
 
-PouchDB.plugin(PouchdbFind)
+PouchDB.plugin(PouchDBAuth)
 
-/**
- * Propagande Client for browser
- */
-export class PropagandeClient {
-  private directCall: DirectCallClient
-  private user?: user;
-  private serverCallbacks: any;
-  private openedFunctions: any;
-  private pouchWraper: PouchWrapper;
-  private notificationTable: PouchConnexion;
-  private userTable?: PouchConnexion;
-  private userNotifTable?: PouchConnexion;
-  private publicTable : PouchConnexion;
-  public appName: string;
-  constructor(options?: {
-    /**Your app name defined by your PropagandeServer */
-    appName: string,
-    /**Your PropagandeServer url default to localhost */
-    propagandeServerUrl?: string;
-    /**Your PropagandeServer port default to 5555 */
-    propagandeServerPort?: number;
-    /** url of couchDB  default to localhost*/
-    couchUrl?: string,
-    /** Port of couchDB  default to 5984*/
-    couchPort?: number,
-  }) {
-    const paramsD: any = {
-      ...{
-        propagandeServerUrl: global.DEFAULT_PROPAGANDE_URL,
-        propagandeServerPort: global.DEFAULT_PROPAGANDE_PORT,
-        couchUrl: global.DEFAULT_COUCHDB_HOST,
-        couchPort: global.DEFAULT_COUCHDB_PORT,
-      },
-      ...options
+const WAIT_RETRY = 4000
+
+interface PropgandeClientOptions {
+  url: string
+  appName: string
+}
+
+interface UserData {
+  name: string
+  roles: string[]
+}
+
+export const propagandeClient = async (options: PropgandeClientOptions): Promise<PropagandeClient> => {
+  const pro = new PropagandeClient(options);
+  await pro.init()
+  return pro
+}
+
+class PropagandeClient {
+  databases: Databases = {}
+  notifListened: { [key: string]: boolean } = {};
+  routes: { [name: string]: Function } = {}
+  url: string
+  appName: string
+  user?: UserData
+  logged = false
+  session: any
+  constructor(options: PropgandeClientOptions) {
+    this.url = options.url
+    this.appName = options.appName
+    this.databases.mainNotif = this.getPouch(global.MAIN_NOTIFICATION_TABLE)
+    this.listenNotifDb(this.databases.mainNotif)
+  }
+
+  async init() {
+    const testDb = this.getPouch('')
+    const session = await testDb.getSession()
+    if (session.userCtx.name !== null) {
+      this.user = <UserData>session.userCtx;
+      this.user.name = this.user.name.split(`${this.appName}_`)[1]
+      this.syncNotifs()
     }
-    this.directCall = new DirectCallClient({
-      port: paramsD.propagandeServerPort,
-      url: paramsD.propagandeServerUrl,
-    });
-    this.appName = paramsD.appName;
-    this.serverCallbacks = {};
-    this.openedFunctions = {};
-    this.pouchWraper = new PouchWrapper(this.getNewPouchDb, {
-      url: paramsD.couchUrl,
-      port: paramsD.couchPort
-    });
-    this.notificationTable = this.pouchWraper.getNewAnonymousPouchConnexion(`propagande_${this.appName}_${global.MAIN_NOTIFICATION_TABLE}`)
-    this.publicTable = this.pouchWraper.getNewAnonymousPouchConnexion(`propagande_${this.appName}_${global.MAIN_PUBLIC_DATA_TABLE}`)
-    this.notificationTable.watchChange((event: any) => {
-      this.onCouchEvent(event.doc)
+  }
+
+  private getPouch(name: string): PouchDB.Database {
+    let string;
+    if (name !== '_users') {
+      name = `propagande_${this.appName}_${name}`
+    }
+    string = `${this.url}/${name}`
+    return new PouchDB(string, <any>{
+      fetch: (url: any, opts: any) => {
+        opts.credentials = 'include';
+        return (<any>PouchDB).fetch(url, opts);
+      },
+      skip_setup: true
     })
   }
 
-  /**
-   * List all public Documents
-   */
-  async listPublicDocuments(){
-    return await this.publicTable.list();
+  private async listenNotifDb(database: PouchDB.Database) {
+    if (!this.notifListened[database.name]) {
+      this.notifListened[database.name] = true
+      const retry = () => {
+        database.changes({
+          live: true,
+          since: "now",
+          include_docs: true
+        }).on('change', async (event: any) => {
+          if (this.routes[event.doc.route]) {
+            try {
+              await this.routes[event.doc.route](event.doc.params)
+            } catch (error) {
+              console.error(error)
+            }
+          }
+        }).on('error', (error) => {
+          setTimeout(retry, WAIT_RETRY)
+        })
+      }
+      retry()
+    } else {
+      // allready listening
+    }
   }
 
-  /**
-   * Called when couchDB change
-   */
-  private async onCouchEvent(doc: any) {
-    if (doc.reason === "mainCall" || doc.reason === 'cibledCall' || doc.reason === 'groupCall') {
-      if (this.openedFunctions[doc.name]) {
-        try {
-          await this.openedFunctions[doc.name](doc.params);
-        } catch (error) {
-          // ERROR WHILE EXECUTING FUNCTION
-        }
-      } else {
-        // FUNCTION DOESN'T EXIST
+  private syncNotifs() {
+    if (this.user) {
+      this.listenNotifDb(this.getPouch(`${this.user.name}_notifs`))
+      for (let role of this.user.roles) {
+        this.listenNotifDb(this.getPouch(`group_${role}`))
       }
     }
   }
 
-  /**
-   * Return couchDb client
-   */
-  private getNewPouchDb(url: string) {
-    return new PouchDB(url)
-  }
-
-
-  /**
-   * Login as a registred user
-   * @param user 
-   */
   async login(user: user) {
-    this.userTable = this.pouchWraper.getNewPouchConnexion(user, '_users')
-    const userDB = await this.userTable.get(`org.couchdb.user:propagande_${this.appName}_${user.name}`)
-    this.userNotifTable = this.pouchWraper.getNewPouchConnexion(user, `propagande_${this.appName}_user_${user.name}`)
-    this.userNotifTable.watchChange(this.onCouchEvent.bind(this))
-    for (let role of userDB.roles) {
-      const rolePouchConnexion = this.pouchWraper.getNewPouchConnexion(user, `propagande_${this.appName}_group_${role}`)
-      rolePouchConnexion.watchChange((event: any) => {
-        this.onCouchEvent(event.doc)
-      })
-    }
+    this.user = <UserData>await this.databases.mainNotif.logIn(`propagande_ange_${user.name}`, user.password)
+    this.user.name = this.user.name.split(`${this.appName}_`)[1]
+    this.syncNotifs()
   }
 
-
-  /**
-   * Call a a function that has been opened in propagandeServer 
-   * @param functionName 
-   * @param params 
-   * @param callback 
-   */
-  callServer(functionName: string, params: any, callback?: Function) {
-    const id = genId('call');
-    this.directCall.emit({
-      reason: 'call',
-      functionName,
-      params,
-      id,
-      user: this.user
-    })
-    if (callback) {
-      this.serverCallbacks[id] = callback;
-    }
+  async logout(user: user) {
+    await this.databases.mainNotif.logOut()
+    this.user = undefined
   }
 
-  /**
-   * Make a function callable from backend initiative
-   */
-  openFunction(func: Function) {
-    if (func.name === "") {
-      throw new Error(`Anonymous function aren't openable`)
+  addRoute(name: string, callback: Function) {
+    if (this.routes[name]) {
+      throw new Error(`Route ${name} allready exist`)
     }
-    this.openedFunctions[func.name] = func;
+    this.routes[name] = callback
   }
 }
+
+const main = async () => {
+  const pro = await propagandeClient({
+    appName: "ange",
+    url: 'http://localhost:4000'
+  })
+
+  await pro.login({
+    name: "roulio",
+    password: "chien"
+  })
+
+  pro.addRoute("hello", (params: any) => {
+    console.log(params);
+  })
+}
+
+// main()

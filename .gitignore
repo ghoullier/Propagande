@@ -3,4 +3,8 @@ local/
 node_modules/
 public/pouchdb-7.0.0.min.js
 lib
-
+*_db
+config.json
+log.txt
+ww.code-workspace
+testClient

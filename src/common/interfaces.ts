@@ -1,23 +1,12 @@
-export interface userLogin {
-  /**user name */
-  name: string
-  /**user password */
-  password: string
+export interface Databases {
+  [index: string]: PouchDB.Database
 }
 
 export interface user {
-  /**user name */
-  name: string
-  /**user password */
-  password?: string
-  /** groups */
-  roles? : any[]
+  name: string,
+  password: string
 }
 
-export interface socketCall {
-  reason: string;
-  functionName: string,
-  params: any,
-  id: string;
-  user?: user
+export interface message {
+  
 }

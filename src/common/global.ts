@@ -1,7 +1,10 @@
-export const DEFAULT_PROPAGANDE_URL = 'http://localhost';
-export const DEFAULT_PROPAGANDE_PORT = 5555;
-export const DEFAULT_COUCHDB_HOST = 'http://localhost';
-export const DEFAULT_COUCHDB_PORT = 5984;
-export const MAIN_NOTIFICATION_TABLE = "notifications"
-export const MAIN_PUBLIC_DATA_TABLE = "public"
-export const USERS_TABLE = '_users'
+export const MAIN_NOTIFICATION_TABLE = "mainNotif"
+export const POUCH_ROUTE = ''
+
+/**
+ * Unhandled Promise rejection that may happen with pouchdb-server
+ */
+export const KNOW_POUCHDB_ERRORS = [
+  `TypeError: Cannot set property 'instance_start_time' of undefined`,
+  `TypeError: db.info is not a function`
+]
