@@ -101,7 +101,7 @@ class PropagandeClient {
   }
 
   async login(user: user) {
-    this.user = <UserData>await this.databases.mainNotif.logIn(`propagande_ange_${user.name}`, user.password)
+    this.user = <UserData>await this.databases.mainNotif.logIn(`propagande_${this.appName}_${user.name}`, user.password)
     this.user.name = this.user.name.split(`${this.appName}_`)[1]
     this.syncNotifs()
   }
