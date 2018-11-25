@@ -1,4 +1,4 @@
-# Propagande
+# Propagande (alpha)
 
 ## Let your front-ends know your message
 
