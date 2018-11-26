@@ -1,19 +1,16 @@
-var path = require('path');
-var webpack = require('webpack');
+const path = require('path');
 
 module.exports = {
-  entry: {
-    main: './src/client/propagandeClient.ts',
-  },
+  mode: 'production',
+  entry: './src/client',
   resolve: {
-    extensions: [".webpack.js", ".web.js", ".js", ".ts"]
+    extensions: ['.js', '.ts']
   },
   output: {
-    publicPath: "/js/",
     path: path.join(__dirname, '/browser/'),
     filename: 'propagande-min.js',
-    // library: 'PropagandeClient',
-    libraryTarget: 'umd'
+    library: 'Propagande',
+    libraryTarget: 'umd',
   },
   module: {
     rules: [

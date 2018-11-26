@@ -1,1 +1,1 @@
-export { propagandeServer } from './server/propagandeServer';
+export * from './server';
